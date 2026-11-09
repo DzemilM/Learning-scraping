@@ -21,4 +21,6 @@ const categoryUrls = hrefs.map((href) => {
     return new URL(href, url).href;
 })
 
-console.log(categoryUrls);
+const firstCategory = categoryUrls[0];
+
+console.log(firstCategory);
