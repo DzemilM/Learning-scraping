@@ -43,10 +43,36 @@ const firstCategoryDoc = await getDoc(firstCategory);
 
 const subCategoryUrls = getLinks(firstCategoryDoc, "#CenColInn", firstCategory);
 
-const firstSubCategory = subCategoryUrls[0];
+const allBoxes = [];
 
-const firstSubCatDoc = await getDoc(firstSubCategory);
+for (const firstSubCategory of subCategoryUrls) {
+    
+    const firstSubCatDoc = await getDoc(firstSubCategory);
 
-const firstSubUrls = getLinks(firstSubCatDoc, "#Hier2", firstSubCategory)
+    const firstSubUrls = getLinks(firstSubCatDoc, "#Hier2", firstSubCategory);
 
-console.log(firstSubUrls);
+    for (const rangeUrl of firstSubUrls) {
+        const rangeDoc = await getDoc(rangeUrl);
+        const rows = rangeDoc.querySelectorAll(".Table > div");
+
+        const boxes = [...rows].map((row) => {
+            const rowsCode = row.querySelector(".Code > span");
+            const rowsSize = row.querySelector(".Answer_DROPDOWN > span");
+            const rowsFrom = row.querySelector(".Answer_DROPDOWN4 > span");
+            const rowsPack = row.querySelector(".UnitDesc_Code > span");
+
+            const box = {
+                code: rowsCode.textContent,
+                size: rowsSize.textContent,
+                price: rowsFrom.textContent,
+                packet_size: rowsPack.textContent
+            }
+            return box;
+        });
+
+        allBoxes.push(...boxes);
+    }
+}
+
+console.log(allBoxes.length);
+
