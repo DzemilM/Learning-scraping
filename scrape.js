@@ -1,6 +1,8 @@
 import { JSDOM } from "jsdom";
+import { writeFile } from "node:fs/promises";
 
-const url = "https://www.davpack.co.uk/";
+
+const homeUrl = "https://www.davpack.co.uk/";
 
 async function getDoc(pageUrl) {
 
@@ -33,46 +35,75 @@ function getLinks(doc, selector, baseUrl) {
     return urls;
 }
 
-const doc = await getDoc(url);
+const homeDoc = await getDoc(homeUrl);
 
-const categoryUrls = getLinks(doc, "#hd_hn", url);
+const categoryUrls = getLinks(homeDoc, "#hd_hn", homeUrl);
 
-const firstCategory = categoryUrls[0];
+const firstCategoryUrl = categoryUrls[0];
 
-const firstCategoryDoc = await getDoc(firstCategory);
+const firstCategoryDoc = await getDoc(firstCategoryUrl);
 
-const subCategoryUrls = getLinks(firstCategoryDoc, "#CenColInn", firstCategory);
+const subCategoryUrls = getLinks(firstCategoryDoc, "#CenColInn", firstCategoryUrl);
 
 const allBoxes = [];
+const seenCodes = [];
 
-for (const firstSubCategory of subCategoryUrls) {
-    
-    const firstSubCatDoc = await getDoc(firstSubCategory);
+for (const subCategoryUrl of subCategoryUrls) {
 
-    const firstSubUrls = getLinks(firstSubCatDoc, "#Hier2", firstSubCategory);
+    const subCategoryDoc = await getDoc(subCategoryUrl);
 
-    for (const rangeUrl of firstSubUrls) {
+    const rangeUrls = getLinks(subCategoryDoc, "#Hier2", subCategoryUrl);
+
+    for (const rangeUrl of rangeUrls) {
         const rangeDoc = await getDoc(rangeUrl);
+        const headings = rangeDoc.querySelectorAll(".headings > div");
+
+        const priceHeading = [...headings].find((heading) => {
+            return heading.textContent.includes("Box From");
+        });
+        const priceClass = priceHeading ? priceHeading.className : "";
+
+        const sizeHeading = [...headings].find((size) => {
+            return size.textContent.includes("mm");
+        });
+        const sizeClass = sizeHeading ? sizeHeading.className : "";
+
+        const packHeading = [...headings].find((pack) => {
+            return pack.textContent.includes("Pack");
+        });
+
+        const packClass = packHeading ? packHeading.className : "";
+
         const rows = rangeDoc.querySelectorAll(".Table > div");
 
         const boxes = [...rows].map((row) => {
-            const rowsCode = row.querySelector(".Code > span");
-            const rowsSize = row.querySelector(".Answer_DROPDOWN > span");
-            const rowsFrom = row.querySelector(".Answer_DROPDOWN4 > span");
-            const rowsPack = row.querySelector(".UnitDesc_Code > span");
+            const codeCell = row.querySelector(".Code > span");
+            const sizeCell = sizeClass.length > 0
+            ? row.querySelector(`.${sizeClass} > span`) : "";
+            const priceCell = priceClass.length > 0 
+            ? row.querySelector(`.${priceClass} > span`) : "";
+            const packCell = packClass.length > 0 
+            ? row.querySelector(`.${packClass} > span`) : "";
 
             const box = {
-                code: rowsCode.textContent,
-                size: rowsSize.textContent,
-                price: rowsFrom.textContent,
-                packet_size: rowsPack.textContent
+                code: codeCell.textContent,
+                size: sizeCell ? sizeCell.textContent : "",
+                price: priceCell ? priceCell.textContent : "",
+                packet_size: packCell ? packCell.textContent : ""
             }
             return box;
         });
 
-        allBoxes.push(...boxes);
+        for (const box of boxes) {
+            if(!seenCodes.includes(box.code)) {
+                allBoxes.push(box);
+                seenCodes.push(box.code);
+            } 
+        }
+        
     }
 }
 
-console.log(allBoxes.length);
+const boxesJSON = JSON.stringify(allBoxes, null, 2);
 
+await writeFile("boxes.json", boxesJSON); 
