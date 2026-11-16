@@ -1,5 +1,6 @@
 import { JSDOM } from "jsdom";
 import { writeFile } from "node:fs/promises";
+import { url } from "node:inspector";
 
 
 const homeUrl = "https://www.davpack.co.uk/";
@@ -35,3 +36,28 @@ function getLinks(doc, selector, baseUrl) {
     return urls;
 }
 
+const homePage = await getDoc(homeUrl);
+
+const homeCategories = getLinks(homePage, "#hd_hn", homeUrl);
+
+const firstHomeCategory = homeCategories[0];
+
+const cardBoardBoxes = await getDoc(firstHomeCategory);
+
+const cardBBUrls = getLinks(cardBoardBoxes, "#CenColInn", firstHomeCategory);
+
+const allProductPages = [];
+
+for (const cardBBUrl of cardBBUrls) {
+    const subCategory = await getDoc(cardBBUrl);
+    const subCategoryUrls = getLinks(subCategory, "#Hier2", cardBBUrl)
+
+    if(subCategoryUrls.length === 0) {
+        allProductPages.push(cardBBUrl)
+    } else {
+        allProductPages.push(...subCategoryUrls)
+    }
+}
+
+
+console.log(allProductPages)
