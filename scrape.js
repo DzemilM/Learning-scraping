@@ -1,7 +1,5 @@
 import { JSDOM } from "jsdom";
 import { writeFile } from "node:fs/promises";
-import { url } from "node:inspector";
-
 
 const homeUrl = "https://www.davpack.co.uk/";
 
@@ -36,6 +34,11 @@ function getLinks(doc, selector, baseUrl) {
     return urls;
 }
 
+function getColumnIndex(headings, text) {
+    return [...headings].findIndex((heading) => heading.textContent.includes(text));
+}
+
+
 const homePage = await getDoc(homeUrl);
 
 const homeCategories = getLinks(homePage, "#hd_hn", homeUrl);
@@ -59,5 +62,37 @@ for (const cardBBUrl of cardBBUrls) {
     }
 }
 
+const allBoxes = [];
 
-console.log(allProductPages)
+for (const productPage of allProductPages) {
+    const productDocument = await getDoc(productPage);
+    const rows = productDocument.querySelectorAll(".Table > div");
+
+    const headings = productDocument.querySelectorAll(".headings > div");
+    const typeIndex = getColumnIndex(headings, "Type");    
+    const priceIndex = getColumnIndex(headings, "Box From");
+    const packetSizeIndex = getColumnIndex(headings, "Pack");
+
+    for(const row of rows) {
+        const code = row.querySelector(".Code").textContent.trim();
+        const size = row.children[1].textContent.trim();
+        const type = typeIndex === -1 ? 
+        "" : row.children[typeIndex].textContent.trim();
+        const price = priceIndex === -1 ?
+        "" : row.children[priceIndex].textContent.trim();
+        const packetSize = packetSizeIndex === -1 ?
+        "" : row.children[packetSizeIndex].textContent.trim();
+
+        const box = {
+            code : code,
+            size : size,
+            type : type,
+            price : price,
+            packet_size : packetSize,
+            page_url : productPage
+        }
+
+        console.log(box)
+    }
+}
+
