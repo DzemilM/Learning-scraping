@@ -76,12 +76,15 @@ for (const productPage of allProductPages) {
     for(const row of rows) {
         const code = row.querySelector(".Code").textContent.trim();
         const size = row.children[1].textContent.trim();
+
         const type = typeIndex === -1 ? 
-        "" : row.children[typeIndex].textContent.trim();
+        null : row.children[typeIndex].textContent.trim();
+
         const price = priceIndex === -1 ?
-        "" : row.children[priceIndex].textContent.trim();
+        null : row.children[priceIndex].textContent.trim();
+        
         const packetSize = packetSizeIndex === -1 ?
-        "" : row.children[packetSizeIndex].textContent.trim();
+        null : row.children[packetSizeIndex].textContent.trim();
 
         const box = {
             code : code,
