@@ -72,6 +72,8 @@ for (const productPage of allProductPages) {
     const typeIndex = getColumnIndex(headings, "Type");    
     const priceIndex = getColumnIndex(headings, "Box From");
     const packetSizeIndex = getColumnIndex(headings, "Pack");
+    const quantityLabels = [...productDocument.querySelectorAll(".headings .pvgh")].map((span) => span.textContent.trim());
+
 
     for(const row of rows) {
         const code = row.querySelector(".Code").textContent.trim();
@@ -86,16 +88,31 @@ for (const productPage of allProductPages) {
         const packetSize = packetSizeIndex === -1 ?
         null : row.children[packetSizeIndex].textContent.trim();
 
+        const rowPrices = [...row.querySelectorAll(".vc > div")].map((p) => p.textContent.trim());
+        const priceRange = {};
+
+        for (let i = 0; i < quantityLabels.length; i++) {
+            const priceForLabel = rowPrices.length === 1 ? 
+            rowPrices[0] : rowPrices[i];
+
+            priceRange[quantityLabels[i]] = priceForLabel;
+        }
+
         const box = {
             code : code,
             size : size,
             type : type,
             price : price,
             packet_size : packetSize,
-            page_url : productPage
+            page_url : productPage,
+            price_range : priceRange
         }
 
-        console.log(box)
+        if (!allBoxes.some((b) => b.code === box.code)) {
+            allBoxes.push(box);
+        }
     }
 }
 
+const boxesJson = JSON.stringify(allBoxes, null, 2);
+await writeFile("boxes.json", boxesJson);
